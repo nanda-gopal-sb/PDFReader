@@ -26,9 +26,9 @@ def get_text_chunks(text):
     return chunks
 
 def get_vector_store(text_chunks):
-    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
-    vector_store.save_local("faiss_index",allow_dangerous_deserialization=True)
+    return vector_store
 
 def get_conversational_chain():
 
@@ -49,28 +49,26 @@ def get_conversational_chain():
 
     return chain
 
-def user_input(user_question):
-    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
-    new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-    docs = new_db.similarity_search(user_question)
+def perform_similarity_search(query, vector_store):
+    results = vector_store.similarity_search(query)
+    return results
 
+def user_input(user_question,vector_store):
+    docs = vector_store.similarity_search(user_question)
     chain = get_conversational_chain()
-
-    
     response = chain(
         {"input_documents":docs, "question": user_question}
         , return_only_outputs=True)
-
-    print(response)
     st.write("Reply: ", response["output_text"])
+
 
 def main():
     st.set_page_config("Chat PDF")
     st.header("Chat with PDF using Gemini :)")
     user_question = st.text_input("Ask a Question from the PDF Files")
+    vector_store = None
 
-    if user_question:
-        user_input(user_question)
+    
 
     with st.sidebar:
         st.title("Menu:")
@@ -82,6 +80,10 @@ def main():
                 raw_text = get_pdf_text(pdf_docs)
                 text_chunks = get_text_chunks(raw_text)
                 get_vector_store(text_chunks)
-                st.success("Done")  
+                st.success("Done") 
+
+    if user_question and vector_store:
+        user_input(user_question,vector_store=vector_store) 
+        
 if __name__ == "__main__":
     main()

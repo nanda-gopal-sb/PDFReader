@@ -1,7 +1,7 @@
 # To start woking 
 Clone the repo
 <br><br>
-Create a python environment
+Create a python environment using conda or pip
 <br><br>
 Then run -
 <br>
